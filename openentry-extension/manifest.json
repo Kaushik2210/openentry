@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "OpenEntry",
+  "version": "1.0",
+  "description": "Generate contributor roadmaps for any GitHub repo",
+  "permissions": ["activeTab", "scripting", "downloads", "clipboardRead"],
+  "host_permissions": [
+    "https://api.github.com/*",
+    "https://raw.githubusercontent.com/*",
+    "https://api.groq.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*/*"],
+      "js": ["content.js"],
+      "css": ["popup-bubble.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "OpenEntry",
+    "default_icon": {
+      "48": "icons/icon48.png"
+    }
+  },
+  "icons": {
+    "48": "icons/icon48.png"
+  }
+}

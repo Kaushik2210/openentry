@@ -1,0 +1,175 @@
+name: openentry
+version: "1.0.0"
+description: >
+  OpenEntry is a GitAgent-powered Chrome Extension that scans any public
+  GitHub repository and generates a structured contributor roadmap for
+  new developers — delivered as a downloadable HTML report.
+
+author: openentry-team
+license: MIT
+standard: gitagent/1.0
+
+# ── Model & Provider ──────────────────────────────────────────
+model:
+  provider: groq
+  name: llama-3.3-70b-versatile
+  temperature: 0.1
+  context_window: 128000
+
+# ── Agent Identity ────────────────────────────────────────────
+identity:
+  soul: ./SOUL.md
+  duties: ./DUTIES.md
+
+# ── Tools this agent uses ─────────────────────────────────────
+tools:
+  - name: github_repo_info
+    description: Fetches repository metadata from the GitHub REST API
+    endpoint: "https://api.github.com/repos/{owner}/{repo}"
+    method: GET
+    auth: none
+
+  - name: github_file_tree
+    description: Fetches the full recursive file tree of a repository
+    endpoint: "https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+    method: GET
+    auth: none
+
+  - name: github_raw_file
+    description: Fetches the raw contents of a specific file in a repository
+    endpoint: "https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+    method: GET
+    auth: none
+
+  - name: groq_llm
+    description: Calls the Groq chat completions API for code analysis and roadmap generation
+    endpoint: "https://api.groq.com/openai/v1/chat/completions"
+    method: POST
+    auth: bearer
+
+  - name: browser_download
+    description: Downloads the generated HTML roadmap report via the Chrome Downloads API
+    runtime: chrome-extension
+
+# ── Skills ────────────────────────────────────────────────────
+skills:
+  - name: repo_scanner
+    path: ./openentry-extension/content.js
+    description: >
+      Parses a GitHub URL, fetches the file tree, scores and ranks
+      files by contribution relevance, and fetches top file contents.
+
+  - name: tech_stack_detector
+    path: ./openentry-extension/content.js
+    description: >
+      Detects the tech stack of a repository from file extensions
+      and root-level config files (package.json, vercel.json, etc.)
+
+  - name: issue_analyzer
+    path: ./openentry-extension/content.js
+    description: >
+      Sends repo context to the LLM and parses the structured JSON
+      response into categorized issues (BEGINNER / INTERMEDIATE / ADVANCED).
+      Filters out false positives where error handling already exists.
+
+  - name: roadmap_generator
+    path: ./openentry-extension/content.js
+    description: >
+      Transforms analyzed issues into a step-by-step contributor
+      roadmap with time estimates and safety guardrails per issue.
+
+  - name: html_report_builder
+    path: ./openentry-extension/content.js
+    description: >
+      Renders all roadmap data into a professionally styled, print-ready
+      HTML report and triggers an automatic browser download.
+
+# ── Workflows ─────────────────────────────────────────────────
+workflows:
+  - name: scan_and_generate
+    description: End-to-end pipeline from GitHub URL to downloadable roadmap
+    steps:
+      - step: parse_url
+        skill: repo_scanner
+        input: github_url
+
+      - step: fetch_repo_metadata
+        tool: github_repo_info
+        input: "{ owner, repo }"
+
+      - step: fetch_file_tree
+        tool: github_file_tree
+        input: "{ owner, repo, branch }"
+        fallback_branch: master
+
+      - step: detect_tech_stack
+        skill: tech_stack_detector
+        input: file_tree
+
+      - step: score_and_rank_files
+        skill: repo_scanner
+        input: file_tree
+
+      - step: fetch_key_file_contents
+        tool: github_raw_file
+        input: top_scored_files
+        max_files: 8
+        max_chars_per_file: 3000
+
+      - step: analyze_with_llm
+        skill: issue_analyzer
+        tool: groq_llm
+        input: "{ repo_metadata, file_tree, key_file_contents, tech_stack }"
+
+      - step: filter_false_positives
+        description: Remove issues where evidenceLine already contains try/catch error handling
+        skill: issue_analyzer
+
+      - step: generate_roadmap
+        skill: roadmap_generator
+        input: filtered_issues
+
+      - step: render_and_download
+        skill: html_report_builder
+        tool: browser_download
+        input: "{ owner, repo, description, language, techStack, issues, roadmap, folderStructure }"
+
+# ── Runtime ───────────────────────────────────────────────────
+runtime:
+  type: chrome-extension
+  manifest_version: 3
+  entry_point: ./openentry-extension/content.js
+  background: ./openentry-extension/background.js
+  host_permissions:
+    - "https://api.github.com/*"
+    - "https://raw.githubusercontent.com/*"
+    - "https://api.groq.com/*"
+  content_scripts:
+    matches: "https://github.com/*/*"
+
+# ── Memory ────────────────────────────────────────────────────
+memory:
+  type: stateless
+  description: >
+    OpenEntry is fully stateless. Each scan session is independent.
+    No user data or repository data is stored or transmitted beyond
+    the analysis pipeline.
+
+# ── Adapters ──────────────────────────────────────────────────
+adapters:
+  - system-prompt
+  - openai
+  - lyzr
+
+# ── Tags ──────────────────────────────────────────────────────
+tags:
+  - github
+  - open-source
+  - contributor-tooling
+  - code-analysis
+  - chrome-extension
+  - llm
+  - gitagent
+  - hackathon
+  - lyzr
+  - groq

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.gitagent/
+workspace/
+*.pdf
+repo-data.json
+test-*.js
+_probe_puter.js
+generate-pdf*.js
+fetch-repo.js
+memory/
+package-lock.json
+.env
+*.env.local

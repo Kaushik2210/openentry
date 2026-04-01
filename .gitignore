@@ -12,3 +12,5 @@ memory/
 package-lock.json
 .env
 *.env.local
+# API key config — copy config.example.js → config.js and add your key
+openentry-extension/config.js

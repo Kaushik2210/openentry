@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "matches": ["https://github.com/*/*"],
-      "js": ["content.js"],
+      "js": ["config.js", "content.js"],
       "css": ["popup-bubble.css"]
     }
   ],

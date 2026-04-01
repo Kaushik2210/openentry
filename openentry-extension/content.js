@@ -1,11 +1,12 @@
-﻿// ============================================================
+// ============================================================
 //  OpenEntry ΓÇö content.js
 //  Injects a floating bubble on github.com/owner/repo pages.
 //  Scans repo via GitHub + Groq API and downloads a roadmap.
 // ============================================================
 
-const GROQ_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
+// GROQ_API_KEY is loaded from config.js (see config.example.js for setup instructions)
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+
 
 // ΓöÇΓöÇ Detect if we are on a valid repo page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function getRepoFromPath() {
